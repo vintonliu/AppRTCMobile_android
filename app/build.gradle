@@ -25,6 +25,6 @@ android {
 }
 
 dependencies {
-    //    implementation 'io.crossbar.autobahn:autobahn-android:18.5.1'
+    implementation 'com.android.support:appcompat-v7:24.1.0'
     implementation files('src/third_party/autobanh/lib/autobanh.jar')
 }

@@ -1,0 +1,5 @@
+.gradle
+.idea/workspace.xml
+.idea
+app/build/
+AppRTCMobile_android.iml

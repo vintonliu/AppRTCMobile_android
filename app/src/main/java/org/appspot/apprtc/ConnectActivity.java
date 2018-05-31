@@ -10,14 +10,19 @@
 
 package org.appspot.apprtc;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.KeyEvent;
@@ -33,6 +38,8 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
+
 import java.util.ArrayList;
 import java.util.Random;
 import org.json.JSONArray;
@@ -41,11 +48,15 @@ import org.json.JSONException;
 /**
  * Handles the initial setup where the user selects which room to join.
  */
-public class ConnectActivity extends Activity {
+public class ConnectActivity extends AppCompatActivity {
   private static final String TAG = "ConnectActivity";
   private static final int CONNECTION_REQUEST = 1;
   private static final int REMOVE_FAVORITE_INDEX = 0;
   private static boolean commandLineRun = false;
+
+  private static final int MY_PERMISSIONS_REQUEST_CAMERA = 100;
+  private static final int MY_PERMISSIONS_REQUEST_RECORD_AUDIO = 101;
+  private static final int MY_PERMISSIONS_REQUEST = 102;
 
   private ImageButton connectButton;
   private ImageButton addFavoriteButton;
@@ -157,6 +168,8 @@ public class ConnectActivity extends Activity {
     addFavoriteButton = (ImageButton) findViewById(R.id.add_favorite_button);
     addFavoriteButton.setOnClickListener(addFavoriteListener);
 
+    askForPermisssions();
+
     // If an implicit VIEW intent is launching the app, go directly to that URL.
     final Intent intent = getIntent();
     if ("android.intent.action.VIEW".equals(intent.getAction()) && !commandLineRun) {
@@ -167,6 +180,32 @@ public class ConnectActivity extends Activity {
       String room = sharedPref.getString(keyprefRoom, "");
       connectToRoom(room, true, loopback, useValuesFromIntent, runTimeMs);
     }
+  }
+
+  public void askForPermisssions() {
+    if ((ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+          != PackageManager.PERMISSION_GRANTED)
+        && (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+            != PackageManager.PERMISSION_GRANTED)) {
+      ActivityCompat.requestPermissions(this,
+                new String[]{Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA},
+                MY_PERMISSIONS_REQUEST);
+    } else if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+            != PackageManager.PERMISSION_GRANTED) {
+      ActivityCompat.requestPermissions(this,
+              new String[]{Manifest.permission.RECORD_AUDIO},
+              MY_PERMISSIONS_REQUEST_RECORD_AUDIO);
+    } else if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+            != PackageManager.PERMISSION_GRANTED) {
+      ActivityCompat.requestPermissions(this,
+              new String[]{Manifest.permission.CAMERA},
+              MY_PERMISSIONS_REQUEST_CAMERA);
+    }
+  }
+
+  private boolean arePermissionGranted() {
+    return (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED)
+            && (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED);
   }
 
   @Override
@@ -321,6 +360,12 @@ public class ConnectActivity extends Activity {
 
   private void connectToRoom(String roomId, boolean commandLineRun, boolean loopback,
       boolean useValuesFromIntent, int runTimeMs) {
+
+    if (!arePermissionGranted()) {
+      Toast.makeText(this, "Failed on permissions denied.", Toast.LENGTH_LONG);
+      return;
+    }
+
     this.commandLineRun = commandLineRun;
 
     // roomId is random for loopback.
