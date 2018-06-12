@@ -395,6 +395,7 @@ public class WebSocketRTCClient implements AppRTCClient, WebSocketChannelEvents 
 
           @Override
           public void onHttpComplete(String response) {
+            Log.d(TAG, "POST response: " + response);
             if (messageType == MessageType.MESSAGE) {
               try {
                 JSONObject roomJson = new JSONObject(response);
